@@ -6,27 +6,14 @@ from flask_login import login_required
 
 from . import db_session
 from .questions import Question
+from .users import User
+
 
 blueprint = flask.Blueprint(
     'questions',
     __name__,
     template_folder='templates'
 )
-
-
-@blueprint.route('/api/questions')
-@login_required
-def get_questions():
-    db_sess = db_session.create_session()
-    questions_list = db_sess.query(Question).filter(Question.author.id == flask_login.current_user.id)
-    return jsonify(
-        {
-            'questions': [
-                item.to_dict(only=('id', 'author', 'text', 'type', 'answ', 'score', 'categories'))
-                for item in questions_list
-            ]
-        }
-    )
 
 
 @blueprint.route('/api/questions/<int:question_id>')
@@ -37,12 +24,9 @@ def get_one_question(question_id):
     if not res:
         return jsonify({'error': 'Not found'})
 
-    if res.author.id != flask_login.current_user.id:
-        return jsonify({'error': 'No access'})
-
     return jsonify(
             {
-                'questions': res.to_dict(only=('id', 'author', 'text', 'type',
+                'questions': res.to_dict(only=('id', 'author', 'title', 'text', 'type',
                                                'answ', 'score', 'categories'))
             }
         )
@@ -55,12 +39,13 @@ def create_question():
         return jsonify({'error': 'Empty request'})
 
     elif not all(key in request.json for key in
-                 ['text', 'type_id', 'answ', 'score', 'categories']):
+                 ['title', 'text', 'type_id', 'answ', 'score', 'categories']):
         return jsonify({'error': 'Bad request'})
 
     db_sess = db_session.create_session()
     question = Question(
         author_id=flask_login.current_user.id,
+        title=request.json['title'],
         text=request.json['text'],
         type_id=request.json['type_id'],
         answ=request.json['answ'],
@@ -72,3 +57,13 @@ def create_question():
     db_sess.add(question)
     db_sess.commit()
     return jsonify({'success': 'OK'})
+
+
+@blueprint.route('/api/categories/<int:user_id>')
+def get_users_categories(user_id):
+    categories = set()
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).get(user_id)
+    for question in user.questions:
+        categories = categories | set(question.categories)
+    return jsonify({'categories': [item.to_dict() for item in categories]})

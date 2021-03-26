@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Создание вопроса</h1>
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>
+        <h2>{{ form.title.label }}</h2><br>
+        {{ form.title(class="form-control") }}<br>
+        {% for error in form.title.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        <h2>{{ form.type.label }}</h2><br>
+        {{ form.type(class="form-control") }}<br>
+        {% for error in form.type.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <p>
+        <h2>{{ form.text.label }}</h2><br>
+        {{ form.text(class="form-control") }}<br>
+        {% for error in form.text.errors %}
+            <p class="alert alert-danger" role="alert">
+            {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        <h2>{{ form.incorrect_answers.label }}</h2>
+        Для типов вопросов "Множественный выбор" и "Единственный выбор", разделитель - пустая строка<br>
+        {{ form.incorrect_answers(class="form-control") }}<br>
+        {% for error in form.incorrect_answers.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        <h2>{{ form.correct_answer.label }}</h2><br>
+        {{ form.correct_answer(class="form-control") }}<br>
+        {% for error in form.correct_answer.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        <h2>{{ form.score.label }}</h2><br>
+        {{ form.score(class="form-control") }}<br>
+        {% for error in form.score.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>
+        <h2>{{ form.categories.label }}</h2>
+        Разделитель - пустая строка<br>
+        {{ form.categories(class="form-control") }}<br>
+        {% for error in form.categories.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    {% if message %}
+        <p class="alert alert-danger" role="alert">
+                {{ message }}
+        </p>
+    {% endif %}
+</form>
+{% endblock %}

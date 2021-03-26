@@ -19,6 +19,7 @@ class Test(SqlAlchemyBase, SerializerMixin):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     author_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
     author = orm.relation("User")
+    title = sqlalchemy.Column(sqlalchemy.String)
     start_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
     finish_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
     runtime = sqlalchemy.Column(sqlalchemy.Time, nullable=True)
