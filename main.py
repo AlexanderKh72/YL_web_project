@@ -23,6 +23,7 @@ from data import questions_api
 from data import test_api
 
 from requests import post, get
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -38,7 +39,7 @@ def main():
     # print(user.questions)
 
     app.register_blueprint(questions_api.blueprint)
-    app.register_blueprint(test_api.blueprint)
+    # app.register_blueprint(test_api.blueprint)
     app.run(port=5000, host='127.0.0.1')
 
 
@@ -133,7 +134,7 @@ def new_question():
             title=form.title.data,
             text=form.text.data,
             type_id=int(form.type.data),
-            answ=bytes(str(answ), encoding='utf-8'),
+            answ=bytes(str(answ).replace("'", '"'), encoding='utf-8'),
             score=form.score.data
         )
         for category_title in form.categories.data.split('\r\n\r\n'):
@@ -180,7 +181,11 @@ def new_test():
 @app.route('/my_questions')
 @login_required
 def my_questions():
-    pass
+    answ_json = [dict(get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json()) for q in flask_login.current_user.questions]
+    print(answ_json)
+    return render_template("my_questions.html", questions=flask_login.current_user.questions,
+                           categories_titles=[get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json() for q in flask_login.current_user.questions],
+                           answ_json=answ_json)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Мои вопросы</h1>
+{% for item in questions %}
+<div class="col-md6 border rounded">
+    <h2>{{item.title}}</h2>
+    <div>
+        <big><b>Текст вопроса</b>: {{item.text}}</big>
+    </div>
+    <p></p>
+    <div>
+        <p>Категории: {{ categories_titles[loop.index0]['categories_titles'] }}</p>
+        {% if (item.type_id == 3) or (item.type_id == 4) %}
+            <p>Неверные варианты: {{ answ_json[loop.index0]['incorr']|join('; ') }}</p>
+        {% endif %}
+        {% if item.type_id == 4 %}
+            <p>Верные варианты: {{ answ_json[loop.index0]['corr']|join('; ') }}</p>
+        {% elif item.type_id == 3 %}
+            <p>Верный вариант: {{ answ_json[loop.index0]['corr'] }}</p>
+        {% else %}
+            <p>Правильный ответ: {{ answ_json[loop.index0]['corr'] }}</p>
+        {% endif %}
+        <p>Баллов за верный ответ: {{ item.score }}</p>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

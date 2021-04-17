@@ -8,6 +8,7 @@ from . import db_session
 from .questions import Question
 from .users import User
 
+import json
 
 blueprint = flask.Blueprint(
     'questions',
@@ -67,3 +68,18 @@ def get_users_categories(user_id):
     for question in user.questions:
         categories = categories | set(question.categories)
     return jsonify({'categories': [item.to_dict() for item in categories]})
+
+
+@blueprint.route('/api/questions/categories/<int:question_id>')
+def get_categories_titles(question_id):
+    db_sess = db_session.create_session()
+    return jsonify(
+        {'categories_titles': list(map(lambda c: c.title, db_sess.query(Question).get(question_id).categories))}
+    )
+
+
+@blueprint.route('/api/questions/answ/<int:question_id>')
+def get_answ_json(question_id):
+    db_sess = db_session.create_session()
+    question = db_sess.query(Question).get(question_id)
+    return jsonify(str(question.answ.decode('utf-8')))
