@@ -9,6 +9,7 @@ from .questions import Question
 from .users import User
 
 import json
+import ast
 
 blueprint = flask.Blueprint(
     'questions',
@@ -82,4 +83,4 @@ def get_categories_titles(question_id):
 def get_answ_json(question_id):
     db_sess = db_session.create_session()
     question = db_sess.query(Question).get(question_id)
-    return jsonify(str(question.answ.decode('utf-8')))
+    return jsonify(ast.literal_eval(question.answ.decode('utf-8')))

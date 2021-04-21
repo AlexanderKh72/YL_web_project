@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ q.title }}</h1>
+    {{ q.text }}
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        </p>
+        <p>
+        <h2>{{ form.answer.label }}</h2><br>
+        {{ form.answer(class="form-control") }}<br>
+        {% for error in form.answer.errors %}
+            <p class="alert alert-danger" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+        </p>
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+        <div>{{ message }}</div>
+    </form>
+    <center>
+        {% if q_id != 1 %}
+        <a href="{{ q_id - 1 }}">Предыдущий вопрос</a>
+        {% endif %}
+        {% if q_id != q_count %}
+        <a href="{{ q_id + 1 }}">Следующий вопрос</a>
+        {% endif %}
+    </center>
+{% endblock %}

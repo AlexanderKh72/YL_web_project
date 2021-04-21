@@ -5,12 +5,15 @@ import flask_login
 from flask_login import login_user, logout_user
 from flask_login import login_required
 from flask_login import LoginManager
+from flask_wtf import FlaskForm
+
 from forms.user import RegisterForm
 from forms.authorization import LoginForm
 from forms.creating_question import NewQuestionForm
 from forms.creating_test import NewTestForm
+from forms.question import QuestionForm
 
-from wtforms import SelectMultipleField
+from wtforms import SelectMultipleField, SelectField, StringField, FloatField, BooleanField
 
 from data import db_session
 from data.users import User
@@ -24,6 +27,10 @@ from data import test_api
 
 from requests import post, get
 import json
+
+import datetime
+import copy
+import random
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -115,10 +122,15 @@ def new_question():
                 message = 'Необходимо заполнить поле "Варианты неверных ответов" или изменить тип'
                 return render_template('new_question.html', title='Регистрация', form=form,
                                        message=message)
-            if form.type.data == '3':
+            if form.type.data == '3' or form.type.data == '4':
+                corr_answ_count = len(form.correct_answer.data.split('\r\n\r\n'))
+                corr = {i: form.correct_answer.data.split('\r\n\r\n')[i] for i in range(corr_answ_count)}
+                incorr_answ_count = len(form.incorrect_answers.data.split('\r\n\r\n'))
+                incorr = {i: form.incorrect_answers.data.split('\r\n\r\n')[i - corr_answ_count] for i in range(corr_answ_count, corr_answ_count + incorr_answ_count)}
+
                 answ = {
-                    'corr': form.correct_answer.data.split('\r\n\r\n'),
-                    'incorr': form.incorrect_answers.data.split('\r\n\r\n')
+                    'corr': copy.deepcopy(corr),
+                    'incorr': copy.deepcopy(incorr)
                 }
             else:
                 answ = {
@@ -137,13 +149,14 @@ def new_question():
             answ=bytes(str(answ).replace("'", '"'), encoding='utf-8'),
             score=form.score.data
         )
-        for category_title in form.categories.data.split('\r\n\r\n'):
-            category = db_sess.query(Category).filter(Category.title == category_title).first()
-            if not category:
-                category = Category(title=category_title)
-                db_sess.add(category)
-                db_sess.commit()
-            question.categories.append(category)
+        if form.categories.data:
+            for category_title in form.categories.data.split('\r\n\r\n'):
+                category = db_sess.query(Category).filter(Category.title == category_title).first()
+                if not category:
+                    category = Category(title=category_title)
+                    db_sess.add(category)
+                    db_sess.commit()
+                question.categories.append(category)
         db_sess.add(question)
         db_sess.commit()
         return redirect('/')
@@ -155,7 +168,7 @@ def new_question():
 @login_required
 def new_test():
     NewTestForm.questions = SelectMultipleField('Выберете вопрос',
-                                         choices=[(str(question.id), f"""{question.title}-{question.text}-{', '.join(list(map(lambda c: c.title, question.categories)))}""") for question in flask_login.current_user.questions])
+                                         choices=[(str(question.id), f"""{question.title}: {question.text}, {', '.join(list(map(lambda c: c.title, question.categories)))}""") for question in flask_login.current_user.questions])
     form = NewTestForm()
 
     if form.validate_on_submit():
@@ -163,10 +176,10 @@ def new_test():
 
         test = Test(
             author_id=flask_login.current_user.id,
-            title=form.title.data,
-            start_time=form.start_time.data,
-            finish_time=form.finish_time.data,
-            is_available=form.is_available.data,
+            title=form.title.data
+            # start_time=form.start_time.data,
+            # finish_time=form.finish_time.data,
+            # is_available=form.is_available.data,
         )
         for question_id in form.questions.data:
             question = db_sess.query(Question).get(question_id)
@@ -181,11 +194,115 @@ def new_test():
 @app.route('/my_questions')
 @login_required
 def my_questions():
-    answ_json = [dict(get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json()) for q in flask_login.current_user.questions]
+    answ_json = [get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json() for q in flask_login.current_user.questions]
     print(answ_json)
     return render_template("my_questions.html", questions=flask_login.current_user.questions,
                            categories_titles=[get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json() for q in flask_login.current_user.questions],
                            answ_json=answ_json)
+
+
+@app.route('/test/<int:test_id>/<int:question_id>', methods=['GET', 'POST'])
+@login_required
+def test(test_id, question_id=1):
+    db_sess = db_session.create_session()
+    test = db_sess.query(Test).get(test_id)
+    question = test.questions[question_id - 1]
+
+    # print(f'\n\n\n{question.id}\n\n')
+
+    work = db_sess.query(Work).filter(Work.user_id == flask_login.current_user.id, Work.test_id == test_id).first()
+    if not work:
+        questions_count = len(db_sess.query(Test).get(test_id).questions)
+        work = Work(
+            user_id=flask_login.current_user.id,
+            test_id=test_id,
+            start_time=datetime.datetime.now(),
+            is_finished=False,
+            answers=';;' * questions_count
+        )
+        db_sess.add(work)
+        db_sess.commit()
+
+    if question_id == 0:
+        try:
+            del QuestionForm.answer
+        except Exception:
+            pass
+        form = QuestionForm()
+        if form.validate_on_submit():
+            work.finish_time = datetime.datetime.now()
+            work.is_finished = True
+
+            score = 0
+            user_answers = work.answers.split(';;')
+            corr_answers = [get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json() for q in test.questions]
+
+            for i, question in enumerate(test.questions):
+                if question.type_id == 3 or question.type_id == 4:
+                    if set(user_answers[i].split(',')) == set(corr_answers[i]['corr'].keys()):
+                        score += question.score
+                elif question.type_id == 2:
+                    if float(user_answers[i]) == float(corr_answers[i]['corr']):
+                        score += question.score
+                else:
+                    if user_answers[i] == corr_answers[i]['corr']:
+                        score += question.score
+            work.result = score
+
+            db_sess.commit()
+            return redirect('/')
+        return render_template("finish_test.html", form=form)
+
+    if test.questions[question_id - 1].type_id == 1:
+        QuestionForm.answer = StringField('Ответ:')
+    elif test.questions[question_id - 1].type_id == 2:
+        QuestionForm.answer = FloatField('Ответ:')
+    elif test.questions[question_id - 1].type_id == 3:
+        answers = get(f'http://127.0.0.1:5000/api/questions/answ/{question.id}').json()
+        corr = [(key, value) for key, value in answers['corr'].items()]
+        incorr = [(key, value) for key, value in answers['incorr'].items()]
+        choices = corr + incorr
+        random.shuffle(choices)
+        QuestionForm.answer = SelectMultipleField('Ответ:', choices=choices)
+    elif test.questions[question_id - 1].type_id == 4:
+        answers = get(f'http://127.0.0.1:5000/api/questions/answ/{question.id}').json()
+        # print(f'{answers}\n\n')
+        corr = [(int(key), value) for key, value in answers['corr'].items()]
+        incorr = [(int(key), value) for key, value in answers['incorr'].items()]
+        choices = corr + incorr
+        random.shuffle(choices)
+        # print(f'{choices}\n\n')
+        # print(f'{type(choices)}\n\n')
+        QuestionForm.answer = SelectField('Ответ:', choices=choices)
+    elif test.questions[question_id - 1].type_id == 5:
+        QuestionForm.answer = BooleanField('Ответ:')
+
+    form = QuestionForm()
+    if form.validate_on_submit():
+        answers = work.answers.split(';;')
+        if test.questions[question_id - 1].type_id == 3:
+            answers[question_id - 1] = ','.join(list(map(str, form.answer.data)))
+        else:
+            answers[question_id - 1] = str(form.answer.data)
+        work.answers = ';;'.join(answers)
+        db_sess.commit()
+        if question_id == len(test.questions):
+            return redirect(f'/test/{test_id}/0')
+        else:
+            return redirect(f'/test/{test_id}/{question_id + 1}')
+
+    return render_template("question.html",
+                           q=question,
+                           form=form,
+                           q_id=question_id,
+                           t_id=test.id,
+                           q_count=len(test.questions))
+
+
+@app.route('/test/<int:test_id>', methods=['GET', 'POST'])
+@login_required
+def test1(test_id):
+    return redirect(f'/test/{test_id}/1')
 
 
 if __name__ == '__main__':

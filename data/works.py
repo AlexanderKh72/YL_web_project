@@ -12,6 +12,7 @@ class Work(SqlAlchemyBase, SerializerMixin):
     test_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("tests.id"))
     test = orm.relation("Test")
     start_time = sqlalchemy.Column(sqlalchemy.DateTime)
-    finish_time = sqlalchemy.Column(sqlalchemy.DateTime)
+    finish_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
     is_finished = sqlalchemy.Column(sqlalchemy.Boolean)
+    answers = sqlalchemy.Column(sqlalchemy.String)
     result = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)

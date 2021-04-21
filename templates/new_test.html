@@ -14,42 +14,6 @@
         {% endfor %}
     </p>
     <p>
-        <h2>{{ form.start_time.label }}</h2><br>
-        {{ form.start_time(class="form-control") }}<br>
-        {% for error in form.start_time.errors %}
-    <p class="alert alert-danger" role="alert">
-        {{ error }}
-    </p>
-    {% endfor %}
-    </p>
-    <p>
-        <h2>{{ form.finish_time.label }}</h2><br>
-        {{ form.finish_time(class="form-control") }}<br>
-        {% for error in form.finish_time.errors %}
-            <p class="alert alert-danger" role="alert">
-            {{ error }}
-            </p>
-        {% endfor %}
-    </p>
-    <p>
-        <h2>{{ form.runtime.label }}</h2><br>
-        {{ form.runtime(class="form-control") }}<br>
-        {% for error in form.runtime.errors %}
-            <p class="alert alert-danger" role="alert">
-                {{ error }}
-            </p>
-        {% endfor %}
-    </p>
-    <p>
-        <h2>{{ form.is_available.label }}</h2><br>
-        {{ form.is_available(class="form-control") }}<br>
-        {% for error in form.is_available.errors %}
-            <p class="alert alert-danger" role="alert">
-                {{ error }}
-            </p>
-        {% endfor %}
-    </p>
-        <p>
         <h2>{{ form.questions.label }}</h2><br>
         {{ form.questions(class="form-control") }}<br>
         {% for error in form.questions.errors %}

@@ -20,10 +20,10 @@ class Test(SqlAlchemyBase, SerializerMixin):
     author_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
     author = orm.relation("User")
     title = sqlalchemy.Column(sqlalchemy.String)
-    start_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
-    finish_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
-    runtime = sqlalchemy.Column(sqlalchemy.Time, nullable=True)
-    is_available = sqlalchemy.Column(sqlalchemy.Boolean)
+    # start_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
+    # finish_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
+    # runtime = sqlalchemy.Column(sqlalchemy.Time, nullable=True)
+    # is_available = sqlalchemy.Column(sqlalchemy.Boolean)
     questions = orm.relation("Question",
                               secondary="tests_to_questions",
                               backref="tests")

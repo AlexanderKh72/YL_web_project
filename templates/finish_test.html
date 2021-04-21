@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Закончить тест?</h1>
+    Нажмите кнопку "Сохранить", чтобы завершить тест.
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+        <div>{{ message }}</div>
+    </form>
+{% endblock %}
