@@ -31,6 +31,7 @@ import json
 import datetime
 import copy
 import random
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -47,7 +48,8 @@ def main():
 
     app.register_blueprint(questions_api.blueprint)
     # app.register_blueprint(test_api.blueprint)
-    app.run(port=5000, host='127.0.0.1')
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
 
 
 @login_manager.user_loader
