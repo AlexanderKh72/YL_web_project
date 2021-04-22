@@ -39,8 +39,11 @@ app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+HOST = '0.0.0.0'
+PORT = int(os.environ.get("PORT", 5000))
 
 def main():
+    global HOST, PORT
     db_session.global_init("db/testing.db")
     # db_sess = db_session.create_session()
     # user = db_sess.query(User).first()
@@ -48,8 +51,9 @@ def main():
 
     app.register_blueprint(questions_api.blueprint)
     # app.register_blueprint(test_api.blueprint)
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    # port = int(os.environ.get("PORT", 5000))
+    app.run(host=HOST, port=PORT)
+    # PORT = port
 
 
 @login_manager.user_loader
@@ -72,7 +76,7 @@ def index():
         v_answers = []
         for question_id in range(len(answers) - 1):
             question = work.test.questions[question_id]
-            corr_answ = get(f'http://127.0.0.1:5000/api/questions/answ/{question.id}').json()
+            corr_answ = get(f'http://{HOST}:{PORT}/api/questions/answ/{question.id}').json()
             answer = answers[question_id]
             v_answer = []
             print(corr_answ, '\n\n\n')
@@ -89,8 +93,8 @@ def index():
 
     correct_answers = []
     for work in works:
-        print('\n\n\n', get(f'http://127.0.0.1:5000/api/tests/answ/{work.test.id}').json())
-        correct_answers.append(get(f'http://127.0.0.1:5000/api/tests/answ/{work.test.id}').json()['corr'])
+        print('\n\n\n', get(f'http://{HOST}:{PORT}/api/tests/answ/{work.test.id}').json())
+        correct_answers.append(get(f'http://{HOST}:{PORT}/api/tests/answ/{work.test.id}').json()['corr'])
 
     return render_template('index.html', title='Главная страница',
                            current_user=flask_login.current_user,
@@ -234,7 +238,7 @@ def my_questions():
     answers = []
     for q in flask_login.current_user.questions:
         answ = {}
-        answ_json = get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json()
+        answ_json = get(f'http://{HOST}:{PORT}/api/questions/answ/{q.id}').json()
         if q.type_id == 3 or q.type_id == 4:
             answ['incorr'] = '; '.join(list(answ_json['incorr'].values()))
             answ['corr'] = '; '.join(list(answ_json['corr'].values()))
@@ -243,7 +247,7 @@ def my_questions():
         answers.append(answ)
 
     return render_template("my_questions.html", questions=flask_login.current_user.questions,
-                           categories_titles=['; '.join(get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json()['categories_titles']) for q in flask_login.current_user.questions],
+                           categories_titles=['; '.join(get(f'http://{HOST}:{PORT}/api/questions/categories/{q.id}').json()['categories_titles']) for q in flask_login.current_user.questions],
                            answers=answers, title='Мои вопросы')
 
 
@@ -281,7 +285,7 @@ def test_passing(test_id, question_id):
 
             score = 0
             user_answers = work.answers.split(';;')
-            corr_answers = [get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json() for q in test.questions]
+            corr_answers = [get(f'http://{HOST}:{PORT}/api/questions/answ/{q.id}').json() for q in test.questions]
 
             for i, question in enumerate(test.questions):
                 if question.type_id == 3 or question.type_id == 4:
@@ -304,14 +308,14 @@ def test_passing(test_id, question_id):
     elif test.questions[question_id - 1].type_id == 2:
         QuestionForm.answer = FloatField('Ответ:')
     elif test.questions[question_id - 1].type_id == 3:
-        answers = get(f'http://127.0.0.1:5000/api/questions/answ/{question.id}').json()
+        answers = get(f'http://{HOST}:{PORT}/api/questions/answ/{question.id}').json()
         corr = [(key, value) for key, value in answers['corr'].items()]
         incorr = [(key, value) for key, value in answers['incorr'].items()]
         choices = corr + incorr
         random.shuffle(choices)
         QuestionForm.answer = SelectMultipleField('Ответ:', choices=choices)
     elif test.questions[question_id - 1].type_id == 4:
-        answers = get(f'http://127.0.0.1:5000/api/questions/answ/{question.id}').json()
+        answers = get(f'http://{HOST}:{PORT}/api/questions/answ/{question.id}').json()
         # print(f'{answers}\n\n')
         corr = [(int(key), value) for key, value in answers['corr'].items()]
         incorr = [(int(key), value) for key, value in answers['incorr'].items()]
@@ -375,7 +379,7 @@ def my_test(test_id):
     answers = []
     for q in test.questions:
         answ = {}
-        answ_json = get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json()
+        answ_json = get(f'http://{HOST}:{PORT}/api/questions/answ/{q.id}').json()
         if q.type_id == 3 or q.type_id == 4:
             answ['incorr'] = '; '.join(list(answ_json['incorr'].values()))
             answ['corr'] = '; '.join(list(answ_json['corr'].values()))
@@ -387,7 +391,7 @@ def my_test(test_id):
     return render_template('test.html', test=test,
                            completed_works=completed_works,
                            uncompleted_works=uncompleted_works,
-                           categories_titles=['; '.join(get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json()['categories_titles']) for q in test.questions],
+                           categories_titles=['; '.join(get(f'http://{HOST}:{PORT}/api/questions/categories/{q.id}').json()['categories_titles']) for q in test.questions],
                            answers=answers, title='Мой тест')
 
 

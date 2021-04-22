@@ -4,7 +4,7 @@
 <h1>Мои вопросы</h1>
 {% for item in tests %}
 <div class="col-md6 border rounded">
-    <h2><a href="http://127.0.0.1:5000/my_tests/{{ item.id }}">{{ item.title }}</a></h2>
+    <h2><a href="my_tests/{{ item.id }}">{{ item.title }}</a></h2>
     <p></p>
     <div>
         <p>Выполненных работ: {{ completed_works[loop.index0] }}</p>
