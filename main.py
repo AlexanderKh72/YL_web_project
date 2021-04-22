@@ -196,7 +196,7 @@ def new_question():
         db_sess.commit()
         return redirect('/')
 
-    return render_template('new_question.html', title='Регистрация', form=form)
+    return render_template('new_question.html', title='Создать вопрос', form=form)
 
 
 @app.route('/new_test', methods=['GET', 'POST'])
@@ -223,7 +223,7 @@ def new_test():
         db_sess.commit()
         return redirect('/')
 
-    return render_template('new_test.html', title='Регистрация', form=form)
+    return render_template('new_test.html', title='Создать тест', form=form)
 
 
 @app.route('/my_questions')
@@ -242,7 +242,7 @@ def my_questions():
 
     return render_template("my_questions.html", questions=flask_login.current_user.questions,
                            categories_titles=['; '.join(get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json()['categories_titles']) for q in flask_login.current_user.questions],
-                           answers=answers)
+                           answers=answers, title='Мои вопросы')
 
 
 @app.route('/test/<int:test_id>/<int:question_id>', methods=['GET', 'POST'])
@@ -340,7 +340,7 @@ def test_passing(test_id, question_id):
                            form=form,
                            q_id=question_id,
                            t_id=test.id,
-                           q_count=len(test.questions))
+                           q_count=len(test.questions), title='Тест')
 
 
 @app.route('/test/<int:test_id>', methods=['GET', 'POST'])
@@ -359,7 +359,8 @@ def my_tests():
     return render_template('my_tests.html',
                            tests=tests,
                            completed_works=completed_works,
-                           uncompleted_works=uncompleted_works)
+                           uncompleted_works=uncompleted_works,
+                           title='Мои тесты')
 
 
 @app.route('/my_tests/<int:test_id>')
@@ -385,7 +386,7 @@ def my_test(test_id):
                            completed_works=completed_works,
                            uncompleted_works=uncompleted_works,
                            categories_titles=['; '.join(get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json()['categories_titles']) for q in test.questions],
-                           answers=answers)
+                           answers=answers, title='Мой тест')
 
 
 if __name__ == '__main__':
