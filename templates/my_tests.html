@@ -10,6 +10,7 @@
         <p>Выполненных работ: {{ completed_works[loop.index0] }}</p>
         <p>Выполняемых работ: {{ uncompleted_works[loop.index0] }}</p>
     </div>
+    <p>Ссылка для прохождения https://yl-testing-system.herokuapp.com/test/{{ item.id }}</p>
 </div>
 {% endfor %}
 {% endblock %}
