@@ -58,8 +58,43 @@ def load_user(user_id):
 
 @app.route('/', methods=['GET'])
 def index():
+    if not flask_login.current_user.is_authenticated:
+        return render_template('index.html', title='Главная страница')
+    db_sess = db_session.create_session()
+
+    works = db_sess.query(Work).filter(Work.user_id == flask_login.current_user.id, Work.is_finished).all()
+
+    user_answers = []
+    for work in works:
+        answers = work.answers.split(';;')
+        v_answers = []
+        for question_id in range(len(answers) - 1):
+            question = work.test.questions[question_id]
+            corr_answ = get(f'http://127.0.0.1:5000/api/questions/answ/{question.id}').json()
+            answer = answers[question_id]
+            v_answer = []
+            print(corr_answ, '\n\n\n')
+            print(question.text)
+            if question.type_id == 3 or question.type_id == 4:
+                for a in answer.split(','):
+                    print(a)
+                    v_answer.append(corr_answ['corr'].get(a, corr_answ['incorr'].get(a, 0)))
+                v_answer = ', '.join(v_answer)
+            else:
+                v_answer = answer
+            v_answers.append(v_answer)
+        user_answers.append(v_answers)
+
+    correct_answers = []
+    for work in works:
+        print('\n\n\n', get(f'http://127.0.0.1:5000/api/tests/answ/{work.test.id}').json())
+        correct_answers.append(get(f'http://127.0.0.1:5000/api/tests/answ/{work.test.id}').json()['corr'])
+
     return render_template('index.html', title='Главная страница',
-                           current_user=flask_login.current_user)
+                           current_user=flask_login.current_user,
+                           works=works,
+                           user_answers=user_answers,
+                           corr_answers=correct_answers)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -194,16 +229,25 @@ def new_test():
 @app.route('/my_questions')
 @login_required
 def my_questions():
-    answ_json = [get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json() for q in flask_login.current_user.questions]
-    print(answ_json)
+    answers = []
+    for q in flask_login.current_user.questions:
+        answ = {}
+        answ_json = get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json()
+        if q.type_id == 3 or q.type_id == 4:
+            answ['incorr'] = '; '.join(list(answ_json['incorr'].values()))
+            answ['corr'] = '; '.join(list(answ_json['corr'].values()))
+        else:
+            answ['corr'] = answ_json['corr']
+        answers.append(answ)
+
     return render_template("my_questions.html", questions=flask_login.current_user.questions,
-                           categories_titles=[get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json() for q in flask_login.current_user.questions],
-                           answ_json=answ_json)
+                           categories_titles=['; '.join(get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json()['categories_titles']) for q in flask_login.current_user.questions],
+                           answers=answers)
 
 
 @app.route('/test/<int:test_id>/<int:question_id>', methods=['GET', 'POST'])
 @login_required
-def test(test_id, question_id=1):
+def test_passing(test_id, question_id):
     db_sess = db_session.create_session()
     test = db_sess.query(Test).get(test_id)
     question = test.questions[question_id - 1]
@@ -301,8 +345,47 @@ def test(test_id, question_id=1):
 
 @app.route('/test/<int:test_id>', methods=['GET', 'POST'])
 @login_required
-def test1(test_id):
+def test_passing1(test_id):
     return redirect(f'/test/{test_id}/1')
+
+
+@app.route('/my_tests')
+@login_required
+def my_tests():
+    db_sess = db_session.create_session()
+    tests = db_sess.query(Test).filter(Test.author_id == flask_login.current_user.id).all()
+    completed_works = [len(db_sess.query(Work).filter(Work.test_id == test.id, Work.is_finished).all()) for test in tests]
+    uncompleted_works = [len(db_sess.query(Work).filter(Work.test_id == test.id, not Work.is_finished).all()) for test in tests]
+    return render_template('my_tests.html',
+                           tests=tests,
+                           completed_works=completed_works,
+                           uncompleted_works=uncompleted_works)
+
+
+@app.route('/my_tests/<int:test_id>')
+@login_required
+def my_test(test_id):
+    db_sess = db_session.create_session()
+    test = db_sess.query(Test).filter(Test.id == test_id, Test.author_id == flask_login.current_user.id).first()
+    completed_works = len(db_sess.query(Work).filter(Work.test_id == test.id, Work.is_finished).all())
+    uncompleted_works = len(db_sess.query(Work).filter(Work.test_id == test.id, not Work.is_finished).all())
+    answers = []
+    for q in test.questions:
+        answ = {}
+        answ_json = get(f'http://127.0.0.1:5000/api/questions/answ/{q.id}').json()
+        if q.type_id == 3 or q.type_id == 4:
+            answ['incorr'] = '; '.join(list(answ_json['incorr'].values()))
+            answ['corr'] = '; '.join(list(answ_json['corr'].values()))
+        else:
+            answ['corr'] = answ_json['corr']
+        answers.append(answ)
+    if not test:
+        return redirect('/my_tests')
+    return render_template('test.html', test=test,
+                           completed_works=completed_works,
+                           uncompleted_works=uncompleted_works,
+                           categories_titles=['; '.join(get(f'http://127.0.0.1:5000/api/questions/categories/{q.id}').json()['categories_titles']) for q in test.questions],
+                           answers=answers)
 
 
 if __name__ == '__main__':

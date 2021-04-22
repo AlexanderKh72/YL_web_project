@@ -6,10 +6,12 @@ from flask_login import login_required
 
 from . import db_session
 from .questions import Question
+from .tests import Test
 from .users import User
 
 import json
 import ast
+from requests import get
 
 blueprint = flask.Blueprint(
     'questions',
@@ -84,3 +86,17 @@ def get_answ_json(question_id):
     db_sess = db_session.create_session()
     question = db_sess.query(Question).get(question_id)
     return jsonify(ast.literal_eval(question.answ.decode('utf-8')))
+
+
+@blueprint.route('/api/tests/answ/<int:test_id>')
+def get_test_answ(test_id):
+    db_sess = db_session.create_session()
+    test = db_sess.query(Test).get(test_id)
+    answers = []
+    for question in test.questions:
+        answ = ast.literal_eval(question.answ.decode('utf-8'))
+        if question.type_id == 3 or question.type_id == 4:
+            answers.append(','.join(list(answ['corr'].values())))
+        else:
+            answers.append(answ['corr'])
+    return jsonify({'corr': answers})

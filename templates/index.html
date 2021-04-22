@@ -1,5 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Главная страница</h1>
+    {% if current_user.is_authenticated %}
+        {% for work in works %}
+        {% set i = loop.index0 %}
+        <div class="col-md6 border rounded">
+        <h2>{{work.test.title}}</h2>
+        <div>
+            <big><b>Результат</b>: {{work.result}}</big>
+        </div>
+        <p></p>
+        <br>
+            {% for question in work.test.questions %}
+            <b>{{ question.title }}: {{ question.text }}</b>
+            Правильный ответ: {{ corr_answers[i][loop.index0] }}; ---
+            Ваш ответ: {{ user_answers[i][loop.index0] }}
+            <p></p>
+            {% endfor %}
+        </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <h1>Войдите или зарегестрируйтесь</h1>
+    {% endif %}
 {% endblock %}

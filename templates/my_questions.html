@@ -10,16 +10,16 @@
     </div>
     <p></p>
     <div>
-        <p>Категории: {{ categories_titles[loop.index0]['categories_titles'] }}</p>
+        <p>Категории: {{ categories_titles[loop.index0] }}</p>
         {% if (item.type_id == 3) or (item.type_id == 4) %}
-            <p>Неверные варианты: {{ answ_json[loop.index0]['incorr']|join('; ') }}</p>
+            <p>Неверные варианты: {{ answers[loop.index0]['incorr'] }}</p>
         {% endif %}
         {% if item.type_id == 4 %}
-            <p>Верные варианты: {{ answ_json[loop.index0]['corr']|join('; ') }}</p>
+            <p>Верный вариант: {{ answers[loop.index0]['corr'] }}</p>
         {% elif item.type_id == 3 %}
-            <p>Верный вариант: {{ answ_json[loop.index0]['corr'] }}</p>
+            <p>Верные варианты: {{ answers[loop.index0]['corr'] }}</p>
         {% else %}
-            <p>Правильный ответ: {{ answ_json[loop.index0]['corr'] }}</p>
+            <p>Правильный ответ: {{ answers[loop.index0]['corr'] }}</p>
         {% endif %}
         <p>Баллов за верный ответ: {{ item.score }}</p>
     </div>
